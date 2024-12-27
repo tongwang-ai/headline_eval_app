@@ -43,10 +43,10 @@ def load_pairs_data(conn):
 ########################################
 # 3) Sampling Logic
 ########################################
-def sample_questions(df, n=10, conn=None):
+def sample_questions(df, n=10):
     """
     Filter out rows where status < 5, then sample 'n' rows
-    with weights proportional to (5 - status), and update the Status in DB.
+    with weights proportional to (5 - status).
     """
     # Filter: only rows with status < 5
     df_filtered = df[df["status"] < 5].copy()
@@ -68,19 +68,8 @@ def sample_questions(df, n=10, conn=None):
         random_state=None  # or an integer for reproducibility
     )
 
-    # Update the status of sampled rows in the database
-    with conn.cursor() as cur:
-        for idx, row in df_sampled.iterrows():
-            update_query = """
-                UPDATE theoryguided_clickbait_survey_200
-                SET status = status + 1
-                WHERE content = %s AND headline = %s;
-            """
-            cur.execute(update_query, (row["content"], row["headline"]))
-        
-        conn.commit()  # Ensure the updates are saved in the database
-
     return df_sampled
+
 
 ########################################
 # 4) Main Streamlit App
@@ -98,8 +87,8 @@ def main():
     # 2. Load data from 'theoryguided_clickbait'
     df_pairs = load_pairs_data(conn)
 
-    # 3. Sample 10 questions and update the status
-    df_questions = sample_questions(df_pairs, n=10, conn=conn)
+    # 3. Sample 10 questions
+    df_questions = sample_questions(df_pairs, n=10)
 
     # If there are no rows to sample, notify the user
     if df_questions.empty:
@@ -140,22 +129,27 @@ def main():
             "clickbait_judgment": response
         })
 
-    # 5. After they answer all, store responses in 'theoryguided_headline_evaluation'
+    # 5. After they answer all, store responses and update status
     if st.button("Submit Answers"):
         submission_time = datetime.now()
         st.write("**Thank you!** Here are your responses:")
 
-        # Capture end time of the survey
-        
-
-        # Insert into database
+        # Insert responses into the evaluation table and update statuses
         with conn.cursor() as cur:
+            # Insert user responses
             insert_query = """
                 INSERT INTO theoryguided_headline_evaluation
                 (content, headline, cos_similarity, clickbait_judgment, start_time, submission_time)
                 VALUES (%s, %s, %s, %s, %s, %s)
             """
+            # Update status
+            update_query = """
+                UPDATE theoryguided_clickbait_survey_200
+                SET status = status + 1
+                WHERE content = %s AND headline = %s;
+            """
             for resp in user_responses:
+                # Insert response
                 cur.execute(
                     insert_query,
                     (
@@ -164,12 +158,17 @@ def main():
                         resp["cos_similarity"],
                         resp["clickbait_judgment"],
                         st.session_state["start_time"],  # Survey start time
-                        submission_time                          # Survey end time
+                        submission_time                  # Survey end time
                     )
+                )
+                # Update status
+                cur.execute(
+                    update_query,
+                    (resp["content"], resp["headline"])
                 )
             conn.commit()
 
-        # (Optional) Close the connection here, or keep it open if reusing
+        # Close the connection
         conn.close()
 
         # Indicate success
