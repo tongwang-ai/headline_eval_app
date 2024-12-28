@@ -42,7 +42,7 @@ def load_pairs_data(conn):
 ########################################
 # 3) Sampling Logic
 ########################################
-def sample_questions(df, n=10):
+def sample_questions(df, n=6):
     """
     Filter out rows where status < 5, then sample 'n' rows
     with weights proportional to (5 - status).
@@ -86,8 +86,8 @@ def main():
         # 2. Load data from 'theoryguided_clickbait'
         df_pairs = load_pairs_data(conn)
 
-        # 3. Sample 10 questions
-        df_questions = sample_questions(df_pairs, n=10)
+        # 3. Sample 6 questions
+        df_questions = sample_questions(df_pairs, n=6)
 
         # If there are no rows to sample, notify the user
         if df_questions.empty:
