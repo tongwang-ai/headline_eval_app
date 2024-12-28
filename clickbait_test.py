@@ -12,15 +12,22 @@ def create_connection():
     Returns a psycopg2 connection object using credentials
     in Streamlit secrets.
     """
+    # return psycopg2.connect(
+    #     dbname=st.secrets["DB_NAME"],
+    #     user=st.secrets["DB_USER"],
+    #     password=st.secrets["DB_PASSWORD"],
+    #     host=st.secrets["DB_HOST"],
+    #     port=st.secrets["DB_PORT"],
+    #     sslmode="require"
+    # )
     return psycopg2.connect(
-        dbname=st.secrets["DB_NAME"],
-        user=st.secrets["DB_USER"],
-        password=st.secrets["DB_PASSWORD"],
-        host=st.secrets["DB_HOST"],
-        port=st.secrets["DB_PORT"],
+        dbname="postgres",  # Correct database name
+        user="tongwang",    # Correct username
+        password="TWluckygirlno01!",  # Correct password
+        host="streamlit-app.ch8aw0oiyxfa.us-east-2.rds.amazonaws.com",  # Correct hostname
+        port="5432",        # Correct port (default: 5432)
         sslmode="require"
     )
-
 
 ########################################
 # 2) Data Loading
