@@ -113,8 +113,8 @@ def main():
         
         response = st.radio(
             f"Do you feel the headline is clickbait?",
-            ("Yes", "No"),
-            index = 1,
+            ("", "Yes", "No"),  # Add an empty string to force selection
+            index=0,  # Default to no selection
             key=f"question_{idx}"
         )
 
