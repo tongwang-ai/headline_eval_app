@@ -50,7 +50,7 @@ def load_pairs_data(conn):
 ########################################
 # 3) Sampling Logic
 ########################################
-def sample_questions(df, n=6):
+def sample_questions(df, n=10):
     """
     Filter out rows where status < 5, then sample 'n' rows
     with weights proportional to (5 - status).
@@ -98,9 +98,9 @@ def main():
         if "df_pairs" not in st.session_state:
             st.session_state["df_pairs"] = load_pairs_data(conn)
 
-        # 3. Sample 6 questions and store them persistently in session_state
+        # 3. Sample 10 questions and store them persistently in session_state
         if "df_questions" not in st.session_state:
-            st.session_state["df_questions"] = sample_questions(st.session_state["df_pairs"], n=6)
+            st.session_state["df_questions"] = sample_questions(st.session_state["df_pairs"], n=10)
 
         # Get the persisted sampled questions
         df_questions = st.session_state["df_questions"]
@@ -114,7 +114,7 @@ def main():
         st.info("""
         **We are studying the relevance of headlines for news articles.**
     
-        You will be presented with 6 questions. For each question, you will see content from a news article along with its headline. Some of the content may be a summary of a video. After reviewing the content and headline, please answer whether you think the headline is clickbait or not, as if you were a user browsing online news.
+        You will be presented with 10 questions. For each question, you will see content from a news article along with its headline. Some of the content may be a summary of a video. After reviewing the content and headline, please answer whether you think the headline is clickbait or not, as if you were a user browsing online news.
         """)
 
         # Initialize user responses
