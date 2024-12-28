@@ -113,18 +113,26 @@ def main():
             # Generate a unique key for each question
             question_key = f"question_{idx}"
 
-            # Initialize the session state for the question if not already set
+            # Initialize session state for the question if not already set
             if question_key not in st.session_state:
                 st.session_state[question_key] = ""  # Default to empty selection
 
-            # Create the radio button, directly tied to session state via key
-            response = st.radio(
+            # Retrieve the current value from session state
+            current_value = st.session_state[question_key]
+
+            # Create the radio button manually tied to session state
+            selected_option = st.radio(
                 f"Do you feel the headline is clickbait?",
                 options=["", "Yes", "No"],  # Options with an empty default
-                key=question_key,
+                index=["", "Yes", "No"].index(current_value),  # Match the current value
+                key=f"{question_key}_widget",  # Use a different widget key
             )
 
-            # Use the session state value directly for storing responses
+            # Update session state manually when a selection is made
+            if selected_option != st.session_state[question_key]:
+                st.session_state[question_key] = selected_option
+
+            # Add the response to user_responses
             user_responses.append({
                 "content": row["content"],
                 "headline": row["headline"],
