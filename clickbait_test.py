@@ -110,35 +110,31 @@ def main():
             st.markdown(f"**Headline:** {row['headline']}")
             st.markdown(f"**Content:** {row['content']}")
 
-            # Generate a unique key for each question
+            # Unique key for session state and widget
             question_key = f"question_{idx}"
 
-            # Initialize session state for the question if not already set
+            # Initialize the session state manually
             if question_key not in st.session_state:
                 st.session_state[question_key] = ""  # Default to empty selection
 
-            # Retrieve the current value from session state
-            current_value = st.session_state[question_key]
-
-            # Create the radio button manually tied to session state
+            # Create the radio button tied explicitly to session state
             selected_option = st.radio(
                 f"Do you feel the headline is clickbait?",
                 options=["", "Yes", "No"],  # Options with an empty default
-                index=["", "Yes", "No"].index(current_value),  # Match the current value
-                key=f"{question_key}_widget",  # Use a different widget key
+                key=f"{question_key}_widget",  # Widget key
+                index=["", "Yes", "No"].index(st.session_state[question_key]),  # Sync index to session state
             )
 
-            # Update session state manually when a selection is made
-            if selected_option != st.session_state[question_key]:
-                st.session_state[question_key] = selected_option
+            # Manually sync widget selection with session state
+            st.session_state[question_key] = selected_option
 
-            # Add the response to user_responses
+            # Add to responses
             user_responses.append({
                 "content": row["content"],
                 "headline": row["headline"],
                 "cos_similarity": row["cos_similarity"],
                 "status": row["status"],
-                "clickbait_judgment": st.session_state[question_key],  # Use the stored session state value
+                "clickbait_judgment": st.session_state[question_key],
             })
 
             # Add a horizontal rule to separate questions
