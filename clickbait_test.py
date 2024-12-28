@@ -117,24 +117,20 @@ def main():
             if question_key not in st.session_state:
                 st.session_state[question_key] = ""  # Default to empty selection
 
-            # Sync the radio button with session state
+            # Create the radio button, directly tied to session state via key
             response = st.radio(
                 f"Do you feel the headline is clickbait?",
                 options=["", "Yes", "No"],  # Options with an empty default
                 key=question_key,
-                index=["", "Yes", "No"].index(st.session_state[question_key]),
             )
 
-            # Update session state manually (important for reruns)
-            st.session_state[question_key] = response
-
-            # Store the response
+            # Use the session state value directly for storing responses
             user_responses.append({
                 "content": row["content"],
                 "headline": row["headline"],
                 "cos_similarity": row["cos_similarity"],
                 "status": row["status"],
-                "clickbait_judgment": response,
+                "clickbait_judgment": st.session_state[question_key],  # Use the stored session state value
             })
 
             # Add a horizontal rule to separate questions
