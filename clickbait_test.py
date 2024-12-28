@@ -103,21 +103,30 @@ def main():
 
         user_responses = []
         i = 1
+
         for idx, row in df_questions.iterrows():
             st.markdown(f"Question " + str(i))
             i += 1
             st.markdown(f"**Headline:** {row['headline']}")
             st.markdown(f"**Content:** {row['content']}")
+
+            # Generate a unique key for each question
+            question_key = f"question_{idx}"
             
+            # Initialize session state for this question if not already set
+            if question_key not in st.session_state:
+                st.session_state[question_key] = ""
+            
+            # Create a radio button for user response
             response = st.radio(
                 f"Do you feel the headline is clickbait?",
                 ("", "Yes", "No"),  # Add an empty string to force selection
-                key=f"question_{idx}"
+                key=question_key
             )
 
             # Add a horizontal rule (line) to separate questions
             st.markdown("---")
-        
+            
             user_responses.append({
                 "content": row["content"],
                 "headline": row["headline"],
@@ -125,6 +134,7 @@ def main():
                 "status": row["status"],
                 "clickbait_judgment": response
             })
+
 
         # Validate responses
         if st.button("Submit Answers"):
