@@ -139,7 +139,7 @@ def main():
     # 5. After they answer all, store responses and update status
     if st.button("Submit Answers"):
         submission_time = datetime.now()
-        st.write("**Thank you!** Here are your responses:")
+        st.write("**Thank you!**")
 
         # Insert responses into the evaluation table and update statuses
         with conn.cursor() as cur:
