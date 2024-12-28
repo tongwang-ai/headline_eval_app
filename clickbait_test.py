@@ -51,7 +51,7 @@ def sample_questions(df, n=10):
     df_filtered = df[df["status"] < 5].copy()
 
     # Compute weights = 5 - status
-    df_filtered["weight"] = max(0, 5 - df_filtered["status"])
+    df_filtered["weight"] = 5 - df_filtered["status"]
 
     # If fewer than n rows remain, sample as many as possible
     sample_size = min(n, len(df_filtered))
