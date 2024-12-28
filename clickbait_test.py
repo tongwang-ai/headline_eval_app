@@ -12,13 +12,21 @@ def create_connection():
     Returns a psycopg2 connection object using credentials
     in Streamlit secrets.
     """
+    # return psycopg2.connect(
+    #     dbname=st.secrets["DB_NAME"],
+    #     user=st.secrets["DB_USER"],
+    #     password=st.secrets["DB_PASSWORD"],
+    #     host=st.secrets["DB_HOST"],
+    #     port=st.secrets["DB_PORT"],
+    #     sslmode="require"
+    # )
     return psycopg2.connect(
-        dbname=st.secrets["DB_NAME"],
-        user=st.secrets["DB_USER"],
-        password=st.secrets["DB_PASSWORD"],
-        host=st.secrets["DB_HOST"],
-        port=st.secrets["DB_PORT"],
-        sslmode="require"
+    dbname="postgres",       # Example: "postgres"
+    user="tongwang",         # The username you set, e.g. "masteruser"
+    password="TWluckygirlno01!", # The password you set
+    host="streamlit-app.ch8aw0oiyxfa.us-east-2.rds.amazonaws.com", 
+    port="5432",                 # Default PostgreSQL port on RDS
+    sslmode="require"
     )
 
 ########################################
@@ -72,6 +80,9 @@ def sample_questions(df, n=6):
 ########################################
 # 4) Main Streamlit App
 ########################################
+########################################
+# 4) Main Streamlit App
+########################################
 def main():
     st.title("Evaluating the Headlines")
 
@@ -84,10 +95,15 @@ def main():
 
     try:
         # 2. Load data from 'theoryguided_clickbait'
-        df_pairs = load_pairs_data(conn)
+        if "df_pairs" not in st.session_state:
+            st.session_state["df_pairs"] = load_pairs_data(conn)
 
-        # 3. Sample 6 questions
-        df_questions = sample_questions(df_pairs, n=6)
+        # 3. Sample 6 questions and store them persistently in session_state
+        if "df_questions" not in st.session_state:
+            st.session_state["df_questions"] = sample_questions(st.session_state["df_pairs"], n=6)
+
+        # Get the persisted sampled questions
+        df_questions = st.session_state["df_questions"]
 
         # If there are no rows to sample, notify the user
         if df_questions.empty:
@@ -112,7 +128,7 @@ def main():
             st.markdown(f"**Content:** {row['content']}")
 
             # Define a unique session state key for each question
-            question_key = f"question_{idx}"
+            question_key = f"question_{idx}_{row['headline']}"
 
             # Initialize the session state for this question if not already set
             if question_key not in st.session_state:
@@ -120,7 +136,7 @@ def main():
 
             # Render the radio button directly tied to the session state
             st.session_state[question_key] = st.radio(
-                f"Do you feel the headline is clickbait?",
+                f"Do you feel the headline is clickbait? (Question {i-1})",
                 options=["", "Yes", "No"],  # Options include an empty default
                 index=["", "Yes", "No"].index(st.session_state[question_key])  # Match the current value
             )
@@ -136,10 +152,6 @@ def main():
 
             # Add a horizontal rule to separate questions
             st.markdown("---")
-
-
-
-
 
         # Validate responses
         if st.button("Submit Answers"):
