@@ -105,7 +105,7 @@ def main():
         i = 1
 
         for idx, row in df_questions.iterrows():
-            st.markdown(f"Question " + str(i))
+            st.markdown(f"Question {i}")
             i += 1
             st.markdown(f"**Headline:** {row['headline']}")
             st.markdown(f"**Content:** {row['content']}")
@@ -117,14 +117,16 @@ def main():
             if question_key not in st.session_state:
                 st.session_state[question_key] = ""  # Default to empty selection
 
-            # Create the radio button with session state synchronization
+            # Sync the radio button with session state
             response = st.radio(
                 f"Do you feel the headline is clickbait?",
-                options=["", "Yes", "No"],
-                index=["", "Yes", "No"].index(st.session_state[question_key]),  # Set the initial index
+                options=["", "Yes", "No"],  # Options with an empty default
                 key=question_key,
-                on_change=lambda: st.session_state.update({question_key: st.session_state[question_key]}),
+                index=["", "Yes", "No"].index(st.session_state[question_key]),
             )
+
+            # Update session state manually (important for reruns)
+            st.session_state[question_key] = response
 
             # Store the response
             user_responses.append({
@@ -132,7 +134,7 @@ def main():
                 "headline": row["headline"],
                 "cos_similarity": row["cos_similarity"],
                 "status": row["status"],
-                "clickbait_judgment": st.session_state[question_key],
+                "clickbait_judgment": response,
             })
 
             # Add a horizontal rule to separate questions
