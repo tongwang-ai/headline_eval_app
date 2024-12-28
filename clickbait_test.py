@@ -98,7 +98,7 @@ def main():
         st.info("""
         **We are studying the relevance of headlines for news articles.**
     
-        You will be presented with 10 questions. For each question, you will see content from a news article along with its headline. Some of the content may be a summary of a video. After reviewing the content and headline, please answer whether you think the headline is clickbait or not, as if you were a user browsing online news.
+        You will be presented with 6 questions. For each question, you will see content from a news article along with its headline. Some of the content may be a summary of a video. After reviewing the content and headline, please answer whether you think the headline is clickbait or not, as if you were a user browsing online news.
         """)
 
         user_responses = []
