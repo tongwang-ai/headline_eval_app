@@ -21,7 +21,6 @@ def create_connection():
         sslmode="require"
     )
 
-
 ########################################
 # 2) Data Loading
 ########################################
@@ -52,7 +51,7 @@ def sample_questions(df, n=10):
     df_filtered = df[df["status"] < 5].copy()
 
     # Compute weights = 5 - status
-    df_filtered["weight"] = 5 - df_filtered["status"]
+    df_filtered["weight"] = max(0, 5 - df_filtered["status"])
 
     # If fewer than n rows remain, sample as many as possible
     sample_size = min(n, len(df_filtered))
@@ -70,7 +69,6 @@ def sample_questions(df, n=10):
 
     return df_sampled
 
-
 ########################################
 # 4) Main Streamlit App
 ########################################
@@ -84,96 +82,99 @@ def main():
     # 1. Connect to DB
     conn = create_connection()
 
-    # 2. Load data from 'theoryguided_clickbait'
-    df_pairs = load_pairs_data(conn)
+    try:
+        # 2. Load data from 'theoryguided_clickbait'
+        df_pairs = load_pairs_data(conn)
 
-    # 3. Sample 10 questions
-    df_questions = sample_questions(df_pairs, n=10)
+        # 3. Sample 10 questions
+        df_questions = sample_questions(df_pairs, n=10)
 
-    # If there are no rows to sample, notify the user
-    if df_questions.empty:
-        st.warning("No rows available (all have status >= 5).")
-        return
+        # If there are no rows to sample, notify the user
+        if df_questions.empty:
+            st.warning("No rows available (all have status >= 5).")
+            return
 
-    # 4. Display the questions
-    st.info("""
-    **We are studying the relevance of headlines for news articles.**
- 
-    You will be presented with 10 questions. For each question, you will see content from a news article along with its headline. Some of the content may be a summary of a video. After reviewing the content and headline, please answer whether you think the headline is clickbait or not, as if you were a user browsing online news.
+        # 4. Display the questions
+        st.info("""
+        **We are studying the relevance of headlines for news articles.**
     
-    """)
+        You will be presented with 10 questions. For each question, you will see content from a news article along with its headline. Some of the content may be a summary of a video. After reviewing the content and headline, please answer whether you think the headline is clickbait or not, as if you were a user browsing online news.
+        """)
 
-    user_responses = []
-    i = 1
-    for idx, row in df_questions.iterrows():
-        st.markdown(f"Question " + str(i))
-        i += 1
-        st.markdown(f"**Headline:** {row['headline']}")
-        st.markdown(f"**Content:** {row['content']}")
+        user_responses = []
+        i = 1
+        for idx, row in df_questions.iterrows():
+            st.markdown(f"Question " + str(i))
+            i += 1
+            st.markdown(f"**Headline:** {row['headline']}")
+            st.markdown(f"**Content:** {row['content']}")
+            
+            response = st.radio(
+                f"Do you feel the headline is clickbait?",
+                ("", "Yes", "No"),  # Add an empty string to force selection
+                index=0,  # Default to no selection
+                key=f"question_{idx}"
+            )
+
+            # Add a horizontal rule (line) to separate questions
+            st.markdown("---")
         
-        response = st.radio(
-            f"Do you feel the headline is clickbait?",
-            ("", "Yes", "No"),  # Add an empty string to force selection
-            index=0,  # Default to no selection
-            key=f"question_{idx}"
-        )
+            user_responses.append({
+                "content": row["content"],
+                "headline": row["headline"],
+                "cos_similarity": row["cos_similarity"],
+                "status": row["status"],
+                "clickbait_judgment": response
+            })
 
-        # Add a horizontal rule (line) to separate questions
-        st.markdown("---")
-    
-        user_responses.append({
-            "content": row["content"],
-            "headline": row["headline"],
-            "cos_similarity": row["cos_similarity"],
-            "status": row["status"],
-            "clickbait_judgment": response
-        })
+        # Validate responses
+        if st.button("Submit Answers"):
+            if any(resp["clickbait_judgment"] == "" for resp in user_responses):
+                st.warning("Please answer all questions before submitting.")
+            else:
+                submission_time = datetime.now()
+                st.write("**Thank you!**")
+                st.write("The completion code is headline2024")
 
-    # 5. After they answer all, store responses and update status
-    if st.button("Submit Answers"):
-        submission_time = datetime.now()
-        st.write("**Thank you!**")
-        st.write("The completion code is headline2024")
+                # Insert responses into the evaluation table and update statuses
+                with conn.cursor() as cur:
+                    # Insert user responses
+                    insert_query = """
+                        INSERT INTO theoryguided_headline_evaluation
+                        (content, headline, cos_similarity, clickbait_judgment, start_time, submission_time)
+                        VALUES (%s, %s, %s, %s, %s, %s)
+                    """
+                    # Update status
+                    update_query = """
+                        UPDATE theoryguided_clickbait_survey_200
+                        SET status = status + 1
+                        WHERE content = %s AND headline = %s;
+                    """
+                    for resp in user_responses:
+                        # Insert response
+                        cur.execute(
+                            insert_query,
+                            (
+                                resp["content"],
+                                resp["headline"],
+                                resp["cos_similarity"],
+                                resp["clickbait_judgment"],
+                                st.session_state["start_time"],  # Survey start time
+                                submission_time                  # Survey end time
+                            )
+                        )
+                        # Update status
+                        cur.execute(
+                            update_query,
+                            (resp["content"], resp["headline"])
+                        )
+                    conn.commit()
 
-        # Insert responses into the evaluation table and update statuses
-        with conn.cursor() as cur:
-            # Insert user responses
-            insert_query = """
-                INSERT INTO theoryguided_headline_evaluation
-                (content, headline, cos_similarity, clickbait_judgment, start_time, submission_time)
-                VALUES (%s, %s, %s, %s, %s, %s)
-            """
-            # Update status
-            update_query = """
-                UPDATE theoryguided_clickbait_survey_200
-                SET status = status + 1
-                WHERE content = %s AND headline = %s;
-            """
-            for resp in user_responses:
-                # Insert response
-                cur.execute(
-                    insert_query,
-                    (
-                        resp["content"],
-                        resp["headline"],
-                        resp["cos_similarity"],
-                        resp["clickbait_judgment"],
-                        st.session_state["start_time"],  # Survey start time
-                        submission_time                  # Survey end time
-                    )
-                )
-                # Update status
-                cur.execute(
-                    update_query,
-                    (resp["content"], resp["headline"])
-                )
-            conn.commit()
-
-        # Close the connection
+                # Indicate success
+                st.success("Responses have been recorded! Thank you!")
+    finally:
+        # Ensure the connection is closed
         conn.close()
-
-        # Indicate success
-        st.success("Responses have been recorded! Thank you!")
 
 if __name__ == "__main__":
     main()
