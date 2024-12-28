@@ -133,6 +133,7 @@ def main():
     if st.button("Submit Answers"):
         submission_time = datetime.now()
         st.write("**Thank you!**")
+        st.write("The completion code is headline2024")
 
         # Insert responses into the evaluation table and update statuses
         with conn.cursor() as cur:
