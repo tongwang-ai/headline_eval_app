@@ -101,50 +101,42 @@ def main():
         You will be presented with 6 questions. For each question, you will see content from a news article along with its headline. Some of the content may be a summary of a video. After reviewing the content and headline, please answer whether you think the headline is clickbait or not, as if you were a user browsing online news.
         """)
 
+        # Initialize user responses
         user_responses = []
         i = 1
 
-        # Iterate through questions
         for idx, row in df_questions.iterrows():
             st.markdown(f"Question {i}")
             i += 1
             st.markdown(f"**Headline:** {row['headline']}")
             st.markdown(f"**Content:** {row['content']}")
 
-            # Define unique keys for session state and widget
-            question_state_key = f"question_{idx}"  # For session state
-            question_widget_key = f"widget_{idx}"  # For the widget itself
+            # Define a unique session state key for each question
+            question_key = f"question_{idx}"
 
-            # Initialize session state if not set
-            if question_state_key not in st.session_state:
-                st.session_state[question_state_key] = ""  # Default to empty
+            # Initialize the session state for this question if not already set
+            if question_key not in st.session_state:
+                st.session_state[question_key] = ""  # Default to empty string
 
-            # Get the current value from session state
-            current_value = st.session_state[question_state_key]
-
-            # Render the radio button and sync it with session state
-            selected_option = st.radio(
+            # Render the radio button directly tied to the session state
+            st.session_state[question_key] = st.radio(
                 f"Do you feel the headline is clickbait?",
-                options=["", "Yes", "No"],  # Options with an empty default
-                key=question_widget_key,  # Separate widget key
-                index=["", "Yes", "No"].index(current_value) if current_value in ["", "Yes", "No"] else 0,
+                options=["", "Yes", "No"],  # Options include an empty default
+                index=["", "Yes", "No"].index(st.session_state[question_key])  # Match the current value
             )
 
-            # Update session state only if the selection changes
-            if selected_option != current_value:
-                st.session_state[question_state_key] = selected_option
-
-            # Add the response to user_responses
+            # Append the response to user_responses
             user_responses.append({
                 "content": row["content"],
                 "headline": row["headline"],
                 "cos_similarity": row["cos_similarity"],
                 "status": row["status"],
-                "clickbait_judgment": st.session_state[question_state_key],  # Use updated session state
+                "clickbait_judgment": st.session_state[question_key],  # Use updated session state
             })
 
             # Add a horizontal rule to separate questions
             st.markdown("---")
+
 
 
 
