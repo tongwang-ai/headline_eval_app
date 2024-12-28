@@ -112,28 +112,32 @@ def main():
 
             # Generate a unique key for each question
             question_key = f"question_{idx}"
-            
-            # Initialize session state for this question if not already set
+
+            # Initialize the session state for the question if not already set
             if question_key not in st.session_state:
-                st.session_state[question_key] = ""
-            
-            # Create a radio button for user response
+                st.session_state[question_key] = ""  # Default to empty selection
+
+            # Create the radio button with session state synchronization
             response = st.radio(
                 f"Do you feel the headline is clickbait?",
-                ("", "Yes", "No"),  # Add an empty string to force selection
-                key=question_key
+                options=["", "Yes", "No"],
+                index=["", "Yes", "No"].index(st.session_state[question_key]),  # Set the initial index
+                key=question_key,
+                on_change=lambda: st.session_state.update({question_key: st.session_state[question_key]}),
             )
 
-            # Add a horizontal rule (line) to separate questions
-            st.markdown("---")
-            
+            # Store the response
             user_responses.append({
                 "content": row["content"],
                 "headline": row["headline"],
                 "cos_similarity": row["cos_similarity"],
                 "status": row["status"],
-                "clickbait_judgment": response
+                "clickbait_judgment": st.session_state[question_key],
             })
+
+            # Add a horizontal rule to separate questions
+            st.markdown("---")
+
 
 
         # Validate responses
