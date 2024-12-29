@@ -26,7 +26,7 @@ def create_connection():
 ########################################
 def load_pairs_data(conn):
     """
-    Load all rows from the 'theoryguided_clickbait_survey_200' table
+    Load all rows from the 'theoryguided_clickbait_survey_200_v2' table
     into a pandas DataFrame using a psycopg2 connection.
     """
     query = "SELECT content, headline, cos_similarity, status FROM theoryguided_clickbait_survey_200_v2;"
@@ -164,7 +164,7 @@ def main():
                     """
                     # Update status
                     update_query = """
-                        UPDATE theoryguided_clickbait_survey_200
+                        UPDATE theoryguided_clickbait_survey_200_v2
                         SET status = status + 1
                         WHERE content = %s AND headline = %s;
                     """
