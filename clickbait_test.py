@@ -12,21 +12,13 @@ def create_connection():
     Returns a psycopg2 connection object using credentials
     in Streamlit secrets.
     """
-    # return psycopg2.connect(
-    #     dbname=st.secrets["DB_NAME"],
-    #     user=st.secrets["DB_USER"],
-    #     password=st.secrets["DB_PASSWORD"],
-    #     host=st.secrets["DB_HOST"],
-    #     port=st.secrets["DB_PORT"],
-    #     sslmode="require"
-    # )
     return psycopg2.connect(
-    dbname="postgres",       # Example: "postgres"
-    user="tongwang",         # The username you set, e.g. "masteruser"
-    password="TWluckygirlno01!", # The password you set
-    host="streamlit-app.ch8aw0oiyxfa.us-east-2.rds.amazonaws.com", 
-    port="5432",                 # Default PostgreSQL port on RDS
-    sslmode="require"
+        dbname=st.secrets["DB_NAME"],
+        user=st.secrets["DB_USER"],
+        password=st.secrets["DB_PASSWORD"],
+        host=st.secrets["DB_HOST"],
+        port=st.secrets["DB_PORT"],
+        sslmode="require"
     )
 
 ########################################
@@ -37,7 +29,7 @@ def load_pairs_data(conn):
     Load all rows from the 'theoryguided_clickbait_survey_200' table
     into a pandas DataFrame using a psycopg2 connection.
     """
-    query = "SELECT content, headline, cos_similarity, status FROM theoryguided_clickbait_survey_200;"
+    query = "SELECT content, headline, cos_similarity, status FROM theoryguided_clickbait_survey_200_v2;"
     
     with conn.cursor() as cur:
         cur.execute(query)
