@@ -21,6 +21,7 @@ def create_connection():
         sslmode="require"
     )
 
+
 ########################################
 # 2) Data Loading
 ########################################
@@ -47,17 +48,14 @@ def sample_questions(df, n=10):
     Filter out rows where status < 8, then sample 'n' rows
     with weights proportional to (8 - status).
     """
-    # Filter: only rows with status < 5
+    # Filter: only rows with status < 8
     df_filtered = df[df["status"] < 8].copy()
 
-    # Compute weights = 8 - status
+    # Sample rows ensuring unique content
     df_sampled = df_filtered.groupby('content').apply(lambda x: x.sample(n=1)).sample(n=10, replace=False).reset_index(drop=True)
     
     return df_sampled
 
-########################################
-# 4) Main Streamlit App
-########################################
 ########################################
 # 4) Main Streamlit App
 ########################################
@@ -85,15 +83,20 @@ def main():
 
         # If there are no rows to sample, notify the user
         if df_questions.empty:
-            st.warning("No rows available (all have status >= 5).")
+            st.warning("No rows available (all have status >= 8).")
             return
 
         # 4. Display the questions
         st.info("""
         **We are studying the relevance of headlines for news articles.**
     
-        You will be presented with 10 questions. For each question, you will see content from a news article along with its headline. Some of the content may be a summary of a video. After reviewing the content and headline, please answer whether you think the headline is clickbait or not, as if you were a user browsing online news.
+        You will be presented with 10 questions. For each question, you will see content from a news article along with its headline. Some of the content may be a summary of a video or feel like part of a longer article. 
+
+        Please evaluate whether the **headline is clickbait or not** based solely on the **content provided**. Do not assume that additional context or content exists beyond what is shown. Treat the provided content as the only information available when making your evaluation.
+
+        Your task is to determine if the headline feels like a clickbait to you, after you read the actual article content provided. 
         """)
+
 
         # Initialize user responses
         user_responses = []
@@ -134,6 +137,17 @@ def main():
             # Add a horizontal rule to separate questions
             st.markdown("---")
 
+        # Add a text input field for comments
+        st.markdown("### Comments")
+        if "user_comments" not in st.session_state:
+            st.session_state["user_comments"] = ""  # Initialize session state for comments
+
+        st.session_state["user_comments"] = st.text_area(
+            "Why did you think some of the headlines are clickbaits?",
+            value=st.session_state["user_comments"],  # Retain state across reruns
+            placeholder="Write your comments here..."
+        )
+
         # Validate responses
         if st.button("Submit Answers"):
             if any(resp["clickbait_judgment"] == "" for resp in user_responses):
@@ -148,8 +162,8 @@ def main():
                     # Insert user responses
                     insert_query = """
                         INSERT INTO headline_clickbait_evaluation_50_article_all_beta
-                        (content,headline,original, probability, reward, beta, model, clickbait_judgment, start_time, submission_time)
-                        VALUES (%s, %s, %s, %s, %s, %s,%s, %s, %s, %s)
+                        (content,headline,original, probability, reward, beta, model, clickbait_judgment, start_time, submission_time, comment)
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                     """
                     # Update status
                     update_query = """
@@ -171,14 +185,16 @@ def main():
                                 resp["model"],
                                 resp["clickbait_judgment"],
                                 st.session_state["start_time"],  # Survey start time
-                                submission_time                  # Survey end time
+                                submission_time,                 # Survey end time
+                                st.session_state["user_comments"] if resp["content"] is None else None  # Add comments for the last record
                             )
                         )
                         # Update status
-                        cur.execute(
-                            update_query,
-                            (resp["content"], resp["headline"], resp["beta"], resp["model"])
-                        )
+                        if resp["content"] is not None:
+                            cur.execute(
+                                update_query,
+                                (resp["content"], resp["headline"], resp["beta"], resp["model"])
+                            )
                     conn.commit()
 
                 # Indicate success
