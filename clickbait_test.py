@@ -27,7 +27,7 @@ def create_connection():
 ########################################
 def load_pairs_data(conn):
     """
-    Load all rows from the 'theoryguided_clickbait_survey_200' table
+    Load all rows from the 'headline_clickbait_survey_50_article_all_beta' table
     into a pandas DataFrame using a psycopg2 connection.
     """
     query = "SELECT * FROM headline_clickbait_survey_50_article_all_beta;"
@@ -43,7 +43,7 @@ def load_pairs_data(conn):
 ########################################
 # 3) Sampling Logic
 ########################################
-def sample_questions(df, n=10):
+def sample_questions(df, n=8):
     """
     Filter out rows where status < 8, then sample 'n' rows
     with weights proportional to (8 - status).
@@ -52,7 +52,7 @@ def sample_questions(df, n=10):
     df_filtered = df[df["status"] < 8].copy()
 
     # Sample rows ensuring unique content
-    df_sampled = df_filtered.groupby('content').apply(lambda x: x.sample(n=1)).sample(n=10, replace=False).reset_index(drop=True)
+    df_sampled = df_filtered.groupby('content').apply(lambda x: x.sample(n=1)).sample(n=n, replace=False).reset_index(drop=True)
     
     return df_sampled
 
@@ -74,9 +74,9 @@ def main():
         if "df_pairs" not in st.session_state:
             st.session_state["df_pairs"] = load_pairs_data(conn)
 
-        # 3. Sample 10 questions and store them persistently in session_state
+        # 3. Sample 8 questions and store them persistently in session_state
         if "df_questions" not in st.session_state:
-            st.session_state["df_questions"] = sample_questions(st.session_state["df_pairs"], n=10)
+            st.session_state["df_questions"] = sample_questions(st.session_state["df_pairs"], n=8)
 
         # Get the persisted sampled questions
         df_questions = st.session_state["df_questions"]
@@ -90,7 +90,7 @@ def main():
         st.info("""
         **We are studying the relevance of headlines for news articles.**
     
-        You will be presented with 10 questions. For each question, you will see content from a news article along with its headline. Some of the content may be a summary of a video or feel like part of a longer article. 
+        You will be presented with 8 questions. For each question, you will see content from a news article along with its headline. Some of the content may be a summary of a video or feel like part of a longer article. 
 
         Please evaluate whether the **headline is clickbait or not** based solely on the **content provided**. Do not assume that additional context or content exists beyond what is shown. Treat the provided content as the only information available when making your evaluation.
 
