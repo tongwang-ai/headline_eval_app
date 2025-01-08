@@ -26,17 +26,17 @@ def create_connection():
 ########################################
 def load_pairs_data(conn):
     """
-    Load all rows from the 'theoryguided_clickbait_survey_200_v2' table
+    Load all rows from the 'theoryguided_clickbait_survey_200' table
     into a pandas DataFrame using a psycopg2 connection.
     """
-    query = "SELECT content, headline, cos_similarity, status FROM theoryguided_clickbait_survey_200_v2;"
+    query = "SELECT * FROM headline_clickbait_survey_50_article_all_beta;"
     
     with conn.cursor() as cur:
         cur.execute(query)
         rows = cur.fetchall()
     
     # Convert list of tuples into a DataFrame
-    df = pd.DataFrame(rows, columns=["content", "headline", "cos_similarity", "status"])
+    df = pd.DataFrame(rows, columns=["content", "headline", "original", "probability","reward","beta","model", "status"])
     return df
 
 ########################################
@@ -44,29 +44,15 @@ def load_pairs_data(conn):
 ########################################
 def sample_questions(df, n=10):
     """
-    Filter out rows where status < 5, then sample 'n' rows
-    with weights proportional to (5 - status).
+    Filter out rows where status < 8, then sample 'n' rows
+    with weights proportional to (8 - status).
     """
     # Filter: only rows with status < 5
-    df_filtered = df[df["status"] < 5].copy()
+    df_filtered = df[df["status"] < 8].copy()
 
-    # Compute weights = 5 - status
-    df_filtered["weight"] = 5 - df_filtered["status"]
-
-    # If fewer than n rows remain, sample as many as possible
-    sample_size = min(n, len(df_filtered))
-
-    if sample_size == 0:
-        return pd.DataFrame(columns=df_filtered.columns)  # Empty DF
-
-    # Weighted sampling without replacement
-    df_sampled = df_filtered.sample(
-        n=sample_size,
-        weights="weight",
-        replace=False,
-        random_state=None  # or an integer for reproducibility
-    )
-
+    # Compute weights = 8 - status
+    df_sampled = df_filtered.groupby('content').apply(lambda x: x.sample(n=1)).sample(n=10, replace=False).reset_index(drop=True)
+    
     return df_sampled
 
 ########################################
@@ -137,8 +123,11 @@ def main():
             user_responses.append({
                 "content": row["content"],
                 "headline": row["headline"],
-                "cos_similarity": row["cos_similarity"],
-                "status": row["status"],
+                "original": row["original"],
+                "probability": row["probability"],
+                "reward": row["reward"],
+                "beta": row["beta"],
+                "model": row["model"],
                 "clickbait_judgment": st.session_state[question_key],  # Use updated session state
             })
 
@@ -158,15 +147,15 @@ def main():
                 with conn.cursor() as cur:
                     # Insert user responses
                     insert_query = """
-                        INSERT INTO theoryguided_headline_evaluation
-                        (content, headline, cos_similarity, clickbait_judgment, start_time, submission_time)
-                        VALUES (%s, %s, %s, %s, %s, %s)
+                        INSERT INTO headline_clickbait_evaluation_50_article_all_beta
+                        (content,headline,original, probability, reward, beta, model, clickbait_judgment, start_time, submission_time)
+                        VALUES (%s, %s, %s, %s, %s, %s,%s, %s, %s, %s)
                     """
                     # Update status
                     update_query = """
-                        UPDATE theoryguided_clickbait_survey_200_v2
+                        UPDATE headline_clickbait_survey_50_article_all_beta
                         SET status = status + 1
-                        WHERE content = %s AND headline = %s;
+                        WHERE content = %s AND headline = %s AND beta = %s AND model = %s;
                     """
                     for resp in user_responses:
                         # Insert response
@@ -175,7 +164,11 @@ def main():
                             (
                                 resp["content"],
                                 resp["headline"],
-                                resp["cos_similarity"],
+                                resp["original"],
+                                resp["probability"],
+                                resp["reward"],
+                                resp["beta"],
+                                resp["model"],
                                 resp["clickbait_judgment"],
                                 st.session_state["start_time"],  # Survey start time
                                 submission_time                  # Survey end time
@@ -184,7 +177,7 @@ def main():
                         # Update status
                         cur.execute(
                             update_query,
-                            (resp["content"], resp["headline"])
+                            (resp["content"], resp["headline"], resp["beta"], resp["model"])
                         )
                     conn.commit()
 
