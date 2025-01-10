@@ -151,7 +151,7 @@ def main():
                     insert_query = """
                         INSERT INTO headline_relevance_evaluation_50_article_all_beta
                         (content,headline,original, probability, reward, beta, model, relevance_judgment, start_time, submission_time)
-                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                     """
                     # Update status
                     update_query = """
