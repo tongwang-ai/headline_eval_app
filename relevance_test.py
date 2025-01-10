@@ -116,7 +116,7 @@ def main():
 
             # Render the radio button directly tied to the session state
             st.session_state[question_key] = st.radio(
-                f"Do you the the headline is relevant to the content? (Question {i-1})",
+                f"Do you think the headline is relevant to the content? (Question {i-1})",
                 options=["", "Yes", "No"],  # Options include an empty default
                 index=["", "Yes", "No"].index(st.session_state[question_key])  # Match the current value
             )
