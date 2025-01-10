@@ -1,0 +1,25 @@
+psql -h streamlit-app.ch8aw0oiyxfa.us-east-2.rds.amazonaws.com -U tongwang -d postgres -p 5432
+
+CREATE TABLE theoryguided_pairs_clickbait (
+	id SERIAL PRIMARY KEY,
+	content TEXT,
+	headline TEXT,
+	cos_similarity FLOAT,
+	status INTEGER
+);
+
+conn = psycopg2.connect(
+    dbname="postgres",       # Example: "postgres"
+    user="tongwang",         # The username you set, e.g. "masteruser"
+    password="TWluckygirlno01!", # The password you set
+    host="streamlit-app.ch8aw0oiyxfa.us-east-2.rds.amazonaws.com", 
+    port="5432",                 # Default PostgreSQL port on RDS
+    sslmode="require"
+)
+
+CREATE TABLE theoryguided_headline_evaluation (
+	content TEXT,
+	headline TEXT,
+	cos_similarity FLOAT,
+	clickbait_judgment TEXT
+);
