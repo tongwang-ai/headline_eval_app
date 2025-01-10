@@ -130,7 +130,7 @@ def main():
                 "reward": row["reward"],
                 "beta": row["beta"],
                 "model": row["model"],
-                "relevance_judgment": st.session_state[question_key],  # Use updated session state
+                "relevance_judgement": st.session_state[question_key],  # Use updated session state
             })
 
             # Add a horizontal rule to separate questions
@@ -138,7 +138,7 @@ def main():
 
         # Validate responses
         if st.button("Submit Answers"):
-            if any(resp["relevance_judgment"] == "" for resp in user_responses):
+            if any(resp["relevance_judgement"] == "" for resp in user_responses):
                 st.warning("Please answer all questions before submitting.")
             else:
                 submission_time = datetime.now()
@@ -150,7 +150,7 @@ def main():
                     # Insert user responses
                     insert_query = """
                         INSERT INTO headline_relevance_evaluation_50_article_all_beta
-                        (content,headline,original, probability, reward, beta, model, relevance_judgment, start_time, submission_time)
+                        (content,headline,original, probability, reward, beta, model, relevance_judgement, start_time, submission_time)
                         VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                     """
                     # Update status
@@ -171,7 +171,7 @@ def main():
                                 resp["reward"],
                                 resp["beta"],
                                 resp["model"],
-                                resp["relevance_judgment"],
+                                resp["relevance_judgement"],
                                 st.session_state["start_time"],  # Survey start time
                                 submission_time                 # Survey end time
                             )
